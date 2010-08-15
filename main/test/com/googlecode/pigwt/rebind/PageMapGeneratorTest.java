@@ -16,7 +16,7 @@ public class PageMapGeneratorTest {
         final List<String> pList = Arrays.asList("", "a", "a.b", "a.c", "b", "c", "b.a", "b.a.b", "b.a.c");
         Collections.sort(pList);
 
-        final PageTree tree = PageMapGenerator.buildTree(pList);
+        final PageTree tree = PageTreeGenerator.buildTree(pList);
         assertNotNull(tree);
         final PageTree.Node root = tree.getRoot();
         assertNotNull(root);
@@ -28,16 +28,19 @@ public class PageMapGeneratorTest {
         final PageTree.Node b = root.getChild("b");
         assertEquals("b", b.getToken());
         assertEquals(1, b.getChildren().size());
-        final PageTree.Node ba = b.getChild("b.a");
+        final PageTree.Node ba = b.getChild("a");
         assertEquals("b.a", ba.getToken());
         assertEquals(2, ba.getChildren().size());
+        final PageTree.Node bac = ba.getChild("c");
+        assertNotNull(bac);
+        assertEquals(0, bac.getChildren().size());
     }
 
     @Test
     public void dots() {
-        assertEquals(3, PageMapGenerator.dotsInString("a.b.c.d"));
-        assertEquals(2, PageMapGenerator.dotsInString("a.b.c"));
-        assertEquals(1, PageMapGenerator.dotsInString("adsfljfdslk.dlsfkjlsdfk"));
-        assertEquals(0, PageMapGenerator.dotsInString("adsfljfdslk"));
+        assertEquals(3, PageTreeGenerator.dotsInString("a.b.c.d"));
+        assertEquals(2, PageTreeGenerator.dotsInString("a.b.c"));
+        assertEquals(1, PageTreeGenerator.dotsInString("adsfljfdslk.dlsfkjlsdfk"));
+        assertEquals(0, PageTreeGenerator.dotsInString("adsfljfdslk"));
     }
 }

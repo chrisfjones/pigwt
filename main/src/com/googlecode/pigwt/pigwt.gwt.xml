@@ -12,13 +12,9 @@
 
     <set-property name='user.agent' value='gecko1_8'/>
 
-    <generate-with class="com.googlecode.pigwt.rebind.PageMapGenerator">
-      <when-type-assignable class="com.googlecode.pigwt.client.PageMap" />
+    <generate-with class="com.googlecode.pigwt.rebind.PageTreeGenerator">
+      <when-type-assignable class="com.googlecode.pigwt.client.PageTree" />
     </generate-with>
 
     <source path="client"/>
-
-    <!--<generate-with class="com.yesmail.enterprise.ui.rebind.InjectorAccessorGenerator">-->
-      <!--<when-type-assignable class="com.yesmail.enterprise.ui.client.core.InjectorAccessor" />-->
-    <!--</generate-with>-->
 </module>

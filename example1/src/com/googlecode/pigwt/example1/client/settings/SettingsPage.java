@@ -13,12 +13,10 @@ public class SettingsPage extends Label implements Page {
     }
 
     public void show(PageGroup parent, Map<String, String> params) {
-//        parent.setContent(this);
-        RootPanel.get().add(this);
+        parent.setContent(this);
     }
 
     public void hide(PageGroup parent) {
-//        parent.setContent(null);
-        RootPanel.get().clear();
+        parent.setContent(null);
     }
 }

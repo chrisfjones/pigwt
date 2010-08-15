@@ -8,7 +8,7 @@ public abstract class PageFlyweight<P extends Page> {
     protected PageFlyweight() {
     }
 
-    public abstract void load(String token, Map<String, String> params);
+    public abstract void load(String token, Map<String, String> params, PageGroup parent);
 
     public void unload() {
         page.hide(null);

@@ -14,8 +14,8 @@ public class EntryPoint implements com.google.gwt.core.client.EntryPoint {
     }
 
     private void deferredLoad() {
-        final PageMap pageMap = GWT.create(PageMap.class);
-        final PageLoader pageLoader = new PageLoader(pageMap);
+        final PageTree pageTree = GWT.create(PageTree.class);
+        final PageLoader pageLoader = new PageLoader(pageTree);
         final NavStateGuy navStateGuy = new NavStateGuy(pageLoader);
         navStateGuy.fireCurrentNavState();
     }

@@ -1,24 +1,30 @@
 package com.googlecode.pigwt.rebind;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.core.ext.*;
-import com.google.gwt.core.ext.typeinfo.*;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JPackage;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.googlecode.pigwt.client.PageMap;
+import com.googlecode.pigwt.client.Page;
+import com.googlecode.pigwt.client.PageGroup;
 import com.googlecode.pigwt.client.PageTree;
 
 import java.io.PrintWriter;
 import java.util.*;
 
-public class PageMapGenerator extends Generator {
-    private static final String PAGE_MAP_CLASS_QNAME = PageMap.class.getCanonicalName();
+public class PageTreeGenerator extends Generator {
+    private static final TreeLogger.Type logType = TreeLogger.DEBUG;
+    private static final String PAGE_TREE_CLASS_QNAME = PageTree.class.getCanonicalName();
+    private static final String PAGE_QNAME = Page.class.getCanonicalName();
+    private static final String GROUP_QNAME = PageGroup.class.getCanonicalName();
+    private static final String ROOT_PACKAGE_VARIABLE_NAME = "pigwt.rootPackage";
 
     private String packageName;
     private String className;
-    private static final TreeLogger.Type logType = TreeLogger.DEBUG;
-    private static final String PAGE_QNAME = "com.googlecode.pigwt.client.Page";
-    private static final String GROUP_QNAME = "com.googlecode.pigwt.client.PageGroup";
-    private static final String ROOT_PACKAGE_VARIABLE_NAME = "pigwt.rootPackage";
 
     @Override
     public String generate(
@@ -30,27 +36,27 @@ public class PageMapGenerator extends Generator {
         try {
             JClassType classType = typeOracle.getType(typeName);
             packageName = classType.getPackage().getName();
-            className = classType.getSimpleSourceName() + "Wrapper";
+            className = classType.getSimpleSourceName() + "_generated";
             // Generate class source code
             generateClass(logger, context);
         } catch (Exception e) {
-            logger.log(TreeLogger.ERROR, "Failed to generate PageMap", e);
+            logger.log(TreeLogger.ERROR, "Failed to generate PageTree", e);
         }
         return packageName + "." + className;
     }
 
     private void generateClass(TreeLogger logger, GeneratorContext context) throws NotFoundException, BadPropertyValueException, UnableToCompleteException {
-        PrintWriter printWriter = null;
+        PrintWriter printWriter;
         printWriter = context.tryCreate(logger, packageName, className);
         if (printWriter == null) return;
-        ClassSourceFileComposerFactory composer = null;
+        ClassSourceFileComposerFactory composer;
         composer = new ClassSourceFileComposerFactory(packageName, className);
-        composer.setSuperclass(PAGE_MAP_CLASS_QNAME);
-        composer.addImport("com.google.gwt.core.client.GWT");
-        composer.addImport("java.util.Map");
-        composer.addImport("com.google.gwt.core.client.RunAsyncCallback");
-
-        SourceWriter sourceWriter = null;
+        composer.setSuperclass(PAGE_TREE_CLASS_QNAME);
+        composer.addImport(GWT.class.getCanonicalName());
+        composer.addImport(RunAsyncCallback.class.getCanonicalName());
+        composer.addImport(Map.class.getCanonicalName());
+        
+        SourceWriter sourceWriter;
         sourceWriter = composer.createSourceWriter(context, printWriter);
         generateConstructor(sourceWriter, logger, context);
         sourceWriter.outdent();
@@ -87,27 +93,48 @@ public class PageMapGenerator extends Generator {
             packages.put(chopped, jPackage);
         }
 
-        final ArrayList<String> pList = new ArrayList<String>(packages.keySet());
-        Collections.sort(pList);
+        // construct the tree backwards via tail-recursion
+        writeNode("", packages, body, pageType, groupType, logger);
+        body.append("root = node_;");
 
-        PageTree tree = buildTree(pList);
+        System.err.println(body.toString());
 
-        for (String key : packages.keySet()) {
-            JPackage p1 = packages.get(key);
-            JClassType rootGroup = findTypeInPackage(groupType, p1, logger);
-            JClassType rootPage = findTypeInPackage(pageType, p1, logger);
-            if (rootPage != null) {
-                body.append(generateFlyweight(key, rootPage, logger, p1));
+        writeMethod(sourceWriter, "public " + className + "()", body.toString());
+    }
+
+    private String writeNode(String token, Map<String, JPackage> packages, StringBuffer body,
+                             JClassType pageType, JClassType groupType, TreeLogger logger) throws UnableToCompleteException, NotFoundException {
+        int rootDots = "".equals(token) ? -1 : dotsInString(token);
+        Stack<String> nodesToAttachToThis = new Stack<String>();
+        for (String p : packages.keySet()) {
+            if (p.equals(token)) continue;
+            if (!p.startsWith(token)) continue;
+            int pDots = dotsInString(p);
+            if (rootDots + 1 == pDots) {
+                nodesToAttachToThis.push(writeNode(p, packages, body, pageType, groupType, logger));
             }
         }
+        String nodeName = "node_" + token.replaceAll("\\.", "_");
+        body.append("PageTree.Node ").append(nodeName).append(" = new PageTree.Node(\"").append(token).append("\");\n");
 
-        // todo: this would be nicer
-//        JMethod method = new JMethod(null, className);
-//        method.getReadableDeclaration(false, false, false, false, true)
-        
-        writeMethod(sourceWriter, "public " + className + "()", body.toString());
+        final JPackage thisPackage = packages.get(token);
 
-//        sourceWriter.commit(logger);
+        JClassType groupFlyweightType = findTypeInPackage(groupType, thisPackage, logger);
+        if (groupFlyweightType != null) {
+            body.append(nodeName).append(".setGroupFlyweight(").
+                    append(generateFlyweight(groupFlyweightType, logger, thisPackage)).append(");\n");
+        }
+
+        JClassType pageFlyweightType = findTypeInPackage(pageType, thisPackage, logger);
+        if (pageFlyweightType != null) {
+            body.append(nodeName).append(".setPageFlyweight(").
+                    append(generateFlyweight(pageFlyweightType, logger, thisPackage)).append(");\n");
+        }
+
+        while (!nodesToAttachToThis.isEmpty()) {
+            body.append(nodeName).append(".addChild(").append(nodesToAttachToThis.pop()).append(");\n");
+        }
+        return nodeName;
     }
 
     public void writeMethod(SourceWriter writer, String signature, String body) {
@@ -167,25 +194,23 @@ public class PageMapGenerator extends Generator {
     }
 
 
-    private String generateFlyweight(String token, JClassType pageType, TreeLogger logger, JPackage jPackage) throws UnableToCompleteException, NotFoundException {
+    private String generateFlyweight(JClassType pageType, TreeLogger logger, JPackage jPackage) throws UnableToCompleteException, NotFoundException {
         String pageName = jPackage.getName() + "." + pageType.getName();
         logger.branch(logType, "generating flyweight for page: " + pageName);
-        String code =
-                "new PageFlyweight<" + pageName + ">(){\n" +
-                        "    public void load(final String token, final Map<String, String> params) {\n" +
-                        "        GWT.runAsync(new RunAsyncCallback() {\n" +
-                        "            public void onFailure(Throwable reason) {}\n" +
-                        "            public void onSuccess() {\n" +
-                        "                if (page == null) {\n" +
-//                        "                    page = GWT.create(" + pageName + ");\n" + todo: why can't I do a GWT.create here?
-                        "                    page = new " + pageName + "();\n" +
-                        "                }\n" +
-                        "                page.show(null, params);\n" +
-                        "            }\n" +
-                        "        });\n" +
-                        "    }\n" +
-                        "}\n";
 
-        return "put(\"" + token + "\", " + code + ");";
+        return "new PageFlyweight<" + pageName + ">(){\n" +
+                "    public void load(final String token, final Map<String, String> params, final PageGroup parent) {\n" +
+                "        GWT.runAsync(new RunAsyncCallback() {\n" +
+                "            public void onFailure(Throwable reason) {}\n" +
+                "            public void onSuccess() {\n" +
+                "                if (page == null) {\n" +
+//                        "                    page = GWT.create(" + pageName + ");\n" + todo: why can't I do a GWT.create here?
+                "                    page = new " + pageName + "();\n" +
+                "                }\n" +
+                "                page.show(parent, params);\n" +
+                "            }\n" +
+                "        });\n" +
+                "    }\n" +
+                "}";
     }
 }

@@ -6,12 +6,13 @@ import com.googlecode.pigwt.client.PageGroup;
 import java.util.Map;
 
 public class MainGroup extends DockPanel implements PageGroup {
+    private Widget content;
+
     public MainGroup() {
         setBorderWidth(1);
         final VerticalPanel menu = new VerticalPanel();
         menu.add(new Hyperlink("home", ""));
-        menu.add(new Hyperlink("calculator", "utils.calculator"));
-        menu.add(new Hyperlink("clock", "utils.clock"));
+        menu.add(new Hyperlink("utils", "utils"));
         menu.add(new Hyperlink("settings", "settings"));
         add(menu, DockPanel.WEST);
     }
@@ -25,6 +26,10 @@ public class MainGroup extends DockPanel implements PageGroup {
     }
 
     public void setContent(Widget content) {
+        if (this.content != null) {
+            remove(this.content);
+        }
         add(content, DockPanel.CENTER);
+        this.content = content;
     }
 }

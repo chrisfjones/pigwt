@@ -6,6 +6,8 @@ import java.util.List;
 public class PageTree {
     public static class Node {
         private String token;
+        private PageFlyweight<? extends PageGroup> groupFlyweight;
+        private PageFlyweight<? extends Page> pageFlyweight;
         private List<Node> children = new ArrayList<Node>();
 
         public Node(String token) {
@@ -24,13 +26,38 @@ public class PageTree {
             children.add(node);
         }
 
-        public Node getChild(String token) {
+        // assumes only the sub-packages are included in children
+        public Node getChild(String lastTokenBit) {
             for (Node node : children) {
-                if (node.getToken().equals(token)) {
+                if (node.getLastTokenBit().equals(lastTokenBit)) {
                     return node;
                 }
             }
             return null;
+        }
+
+        private String getLastTokenBit() {
+            final int index = token.lastIndexOf(".");
+            if (index < 0) {
+                return token;
+            }
+            return token.substring(index + 1);
+        }
+
+        public PageFlyweight<? extends PageGroup> getGroupFlyweight() {
+            return groupFlyweight;
+        }
+
+        public void setGroupFlyweight(PageFlyweight<? extends PageGroup> groupFlyweight) {
+            this.groupFlyweight = groupFlyweight;
+        }
+
+        public PageFlyweight<? extends Page> getPageFlyweight() {
+            return pageFlyweight;
+        }
+
+        public void setPageFlyweight(PageFlyweight<? extends Page> pageFlyweight) {
+            this.pageFlyweight = pageFlyweight;
         }
 
         @Override
@@ -39,8 +66,11 @@ public class PageTree {
         }
     }
 
-    private Node root;
+    protected Node root;
 
+    protected PageTree() {
+    }
+    
     public PageTree(Node root) {
         this.root = root;
     }
