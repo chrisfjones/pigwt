@@ -1,0 +1,62 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.googlecode.pigwt</groupId>
+    <artifactId>example1</artifactId>
+    <packaging>zip</packaging>
+    <version>@VERSION@</version>                                                                                                                                                                 
+    <name>Example 1 for pigwt</name>
+    <dependencies>
+        <dependency>
+            <groupId>com.google.code.gin</groupId>
+            <artifactId>gin</artifactId>
+            <version>1.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>                                                   
+            <groupId>com.google.code.guice</groupId>
+            <artifactId>guice</artifactId>
+            <version>2.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>aopalliance</groupId>
+            <artifactId>aopalliance</artifactId>
+            <version>1.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
+            <version>2.0.4</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-dev</artifactId>
+            <version>2.0.4</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <version>1.1</version>
+            <scope>test</scope>                
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.8.0</version>
+            <scope>test</scope>
+        </dependency>
+        
+    </dependencies>
+</project>

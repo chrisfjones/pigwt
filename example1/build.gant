@@ -1,0 +1,106 @@
+final def antProperty = ant.project.properties
+ant.property(environment: "env")
+
+final gwtHome = antProperty.'environment.GWT_HOME'
+
+final gwtDevJar = gwtHome + '/gwt-dev.jar'
+
+final mainJavaSourceDir = "src"
+final mainTargetDir = "target/classes"
+
+final compileDependencyClasspath = "compile.dependency.classpath"
+final runtimeDependencyClasspath = "runtime.dependency.classpath"
+final runtimeDependencyFileset = "runtime.dependency.fileset"
+final testDependencyClasspath = "test.dependency.classpath"
+
+final pigwtClassesHome = "../main/target/classes"
+final pigwtSourceHome = "../main/src"
+
+ant.taskdef(name: "pom", classname: "org.apache.maven.artifact.ant.Pom")
+ant.taskdef(name: "dependencies", classname: "org.apache.maven.artifact.ant.DependenciesTask")
+
+def gwtStyle = antProperty.'style' ?: 'OBF'
+
+target(initPom: "") {
+  pom(id: "maven", file: "pom.xml")
+}
+
+target(initCompileDependencies: "") {
+  depends(initPom)
+  dependencies(pomrefid: "maven", pathId: compileDependencyClasspath, useScope: "compile")
+}
+
+target(initRuntimeDependencies: "") {
+  depends(initPom)
+  dependencies(pomrefid: "maven", pathId: runtimeDependencyClasspath, useScope: "runtime", filesetId: runtimeDependencyFileset)
+}
+
+target(initTestDependencies: "") {
+  depends(initPom)
+  dependencies(pomrefid: "maven", pathId: testDependencyClasspath, useScope: "test")
+}
+
+target(clean: "Deletes the target directory") {
+  delete(dir: "target")
+}
+
+target(mkdirs: "") {
+  ant.mkdir(dir: mainTargetDir)
+}
+
+target(compile: "compile the code") {
+  depends(initCompileDependencies)
+  depends(mkdirs)
+  ant.javac(srcdir: mainJavaSourceDir,
+          destdir: mainTargetDir,
+          encoding: "utf-8",
+          fork: "true",
+          Target: "1.6",
+          compiler: "javac1.6",
+          memoryMaximumSize: "768m",
+          memoryInitialSize: "512m",
+          debug: "true",
+          failonerror: "true") {
+    classpath {
+      pathelement(location: gwtHome + '/gwt-user.jar')
+      pathelement(location: gwtDevJar)
+      pathelement(location: pigwtClassesHome)
+      path(refid: compileDependencyClasspath)
+    }
+  }
+}
+
+def final compileGwtModule = {module, style ->
+  println("compiling '" + module + "' with style '" + style + "'")
+  println("$pigwtClassesHome")
+  println("$pigwtSourceHome")
+
+  ant.java(fork: "true",
+          classname: "com.google.gwt.dev.Compiler",
+          maxmemory: "512m",
+          failonerror: "true") {
+    jvmarg(value: "-Djava.awt.headless=true")
+    arg(value: "-war")
+    arg(value: "target")
+    arg(value: "-style")
+    arg(value: style)
+    arg(value: "-localWorkers")
+    arg(value: "2")
+    arg(value: module)
+    classpath {
+      path(refid: compileDependencyClasspath)
+      pathelement(location: mainJavaSourceDir)
+      pathelement(location: mainTargetDir)
+      pathelement(location: gwtHome + '/gwt-user.jar')
+      pathelement(location: gwtDevJar)
+      pathelement(location: pigwtClassesHome)
+      pathelement(location: pigwtSourceHome)
+    }
+  }
+}
+
+target(gwt: "Compile gwt module") {
+  depends(compile)
+
+  compileGwtModule("com.googlecode.pigwt.example1.example1", gwtStyle)
+}
