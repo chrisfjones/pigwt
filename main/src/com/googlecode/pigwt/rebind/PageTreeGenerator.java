@@ -22,6 +22,8 @@ public class PageTreeGenerator extends Generator {
     private static final String PAGE_QNAME = Page.class.getCanonicalName();
     private static final String GROUP_QNAME = PageGroup.class.getCanonicalName();
     private static final String ROOT_PACKAGE_VARIABLE_NAME = "pigwt.rootPackage";
+    private static final String PAGE_INJECTOR_VARIABLE_NAME = "pigwt.pageInjector";
+    private static final String GINJECTOR_CLASS_QNAME = "com.google.gwt.inject.client.Ginjector";
 
     private String packageName;
     private String className;
@@ -76,7 +78,17 @@ public class PageTreeGenerator extends Generator {
         Map<String, JPackage> packages = new HashMap<String, JPackage>();
 
         String rootPackage = context.getPropertyOracle().getConfigurationProperty(ROOT_PACKAGE_VARIABLE_NAME).getValues().get(0);
+        if (rootPackage == null) {
+            logger.log(TreeLogger.ERROR, "Configuration property '" + ROOT_PACKAGE_VARIABLE_NAME + "' not found, pigwt can't build its PageTree without it.");
+            throw new UnableToCompleteException();
+        }
         packages.put("", typeOracle.getPackage(rootPackage));
+
+        String pageInjector = context.getPropertyOracle().getConfigurationProperty(PAGE_INJECTOR_VARIABLE_NAME).getValues().get(0);
+        if (pageInjector == null && isUsingGin(typeOracle)) {
+            logger.log(TreeLogger.WARN, "Looks like gin is on your module's classpath. If you'd like pigwt to use injected pages instead of creating new ones,\n" +
+                    "set the '" + PAGE_INJECTOR_VARIABLE_NAME + "' configuration property to the fully qualified class name of your page injector.");
+        }
 
         JPackage[] jPackages = typeOracle.getPackages();
         for (JPackage jPackage : jPackages) {
@@ -97,9 +109,17 @@ public class PageTreeGenerator extends Generator {
         writeNode("", packages, body, pageType, groupType, logger);
         body.append("root = node_;");
 
-        System.err.println(body.toString());
+//        System.err.println(body.toString());
 
         writeMethod(sourceWriter, "public " + className + "()", body.toString());
+    }
+
+    private boolean isUsingGin(TypeOracle typeOracle) {
+        try {
+            return typeOracle.getType(GINJECTOR_CLASS_QNAME) != null;
+        } catch (NotFoundException e) {
+            return false;
+        }
     }
 
     private String writeNode(String token, Map<String, JPackage> packages, StringBuffer body,
@@ -193,19 +213,21 @@ public class PageTreeGenerator extends Generator {
         return dots;
     }
 
-
     private String generateFlyweight(JClassType pageType, TreeLogger logger, JPackage jPackage) throws UnableToCompleteException, NotFoundException {
         String pageName = jPackage.getName() + "." + pageType.getName();
         logger.branch(logType, "generating flyweight for page: " + pageName);
 
-        return "new PageFlyweight<" + pageName + ">(){\n" +
+        return "new PageFlyweight<" + pageName + ">(\"" + pageName + "\"){\n" +
                 "    public void load(final String token, final Map<String, String> params, final PageGroup parent) {\n" +
                 "        GWT.runAsync(new RunAsyncCallback() {\n" +
                 "            public void onFailure(Throwable reason) {}\n" +
                 "            public void onSuccess() {\n" +
                 "                if (page == null) {\n" +
-//                        "                    page = GWT.create(" + pageName + ");\n" + todo: why can't I do a GWT.create here?
+//                        "                    page = GWT.create(" + pageName + ");\n" + todo: why can't I do a GWT.create here? QQ
                 "                    page = new " + pageName + "();\n" +
+                "                }\n" +
+                "                if (page instanceof Bindable) {\n" +
+                "                    ((Bindable)page).bind();\n" +
                 "                }\n" +
                 "                page.show(parent, params);\n" +
                 "            }\n" +

@@ -5,9 +5,10 @@
 <module rename-to='app'>
     <inherits name='com.google.gwt.user.User'/>
     <inherits name='com.googlecode.pigwt.pigwt'/>
-    <!--<inherits name='com.google.gwt.inject.Inject'/>-->
+    <inherits name='com.google.gwt.inject.Inject'/>
 
     <source path='client'/>
 
     <set-configuration-property name="pigwt.rootPackage" value="com.googlecode.pigwt.example1.client"/>
+    <!--<set-configuration-property name="pigwt.pageInjector" value="com.googlecode.pigwt.example1.client"/>-->
 </module>

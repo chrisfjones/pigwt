@@ -4,11 +4,11 @@
 
 <module rename-to="app">
     <inherits name='com.google.gwt.user.User'/>
-    <!--<inherits name='com.google.gwt.inject.Inject'/>-->
 
     <entry-point class='com.googlecode.pigwt.client.EntryPoint'/>
 
-    <define-configuration-property name="injector" is-multi-valued="false" />
+    <define-configuration-property name="pigwt.rootPackage" is-multi-valued="false" />
+    <define-configuration-property name="pigwt.pageInjector" is-multi-valued="false" />
 
     <set-property name='user.agent' value='gecko1_8'/>
 

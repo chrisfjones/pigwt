@@ -5,7 +5,7 @@ import com.google.gwt.user.client.ui.Widget;
 
 import java.util.Map;
 
-public class RootPanelPageGroup implements PageGroup {
+public final class RootPanelPageGroup implements PageGroup {
     public void setContent(Widget content) {
         RootPanel.get().add(content);
     }
