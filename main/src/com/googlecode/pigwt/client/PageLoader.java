@@ -4,16 +4,19 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class PageLoader {
-    private PageTree tree;
-    private PageGroup rootPageGroup = new RootPanelPageGroup();
-    private final LinkedList<PageFlyweight> loadedFlyweights = new LinkedList<PageFlyweight>();
-    private final Queue<PageFlyweight> flyweightsToLoad = new LinkedList<PageFlyweight>();
+    protected PageTree tree;
+    protected PageGroup rootPageGroup = new RootPanelPageGroup();
+    protected final LinkedList<PageFlyweight> loadedFlyweights = new LinkedList<PageFlyweight>();
+    protected final Queue<PageFlyweight> flyweightsToLoad = new LinkedList<PageFlyweight>();
 
     public PageLoader(final PageTree tree) {
         this.tree = tree;
     }
 
     protected synchronized void enactNavStateChange(NavState navState) {
+        if (tree == null || tree.getRoot() == null) {
+            return;
+        }
         String token = navState.getToken();
         PageTree.Node lastNode;
 
@@ -25,7 +28,7 @@ public class PageLoader {
             final PageFlyweight<? extends PageGroup> group = lastNode.getGroupFlyweight();
             if (loadedFlyweights.size() > level && loadedFlyweights.get(level).equals(group)) {
                 // don't load this flyweight because its already loaded
-                parent = group.page;
+                parent = group.getPage();
             } else {
                 chopLoadedFlyweightsDownToSize(level);
                 flyweightsToLoad.add(group);
@@ -37,14 +40,14 @@ public class PageLoader {
             dotIndex = token.indexOf(".");
             level++;
         }
-        final PageFlyweight<? extends PageGroup> group = lastNode.getGroupFlyweight();
-        if (group != null) {
-            if (loadedFlyweights.size() > level && loadedFlyweights.get(level).equals(group)) {
+        final PageFlyweight<? extends PageGroup> groupFlyweight = lastNode.getGroupFlyweight();
+        if (groupFlyweight != null) {
+            if (loadedFlyweights.size() > level && loadedFlyweights.get(level).equals(groupFlyweight)) {
                 // don't load this flyweight because its already loaded
-                parent = group.page;
+                parent = groupFlyweight.getPage();
             } else {
                 chopLoadedFlyweightsDownToSize(level);
-                flyweightsToLoad.add(group);
+                flyweightsToLoad.add(groupFlyweight);
             }
             level++;
         }
@@ -58,27 +61,28 @@ public class PageLoader {
             final PageFlyweight pageFlyweight = flyweightsToLoad.remove();
             loadFlyweight(navState, pageFlyweight, parent);
             loadedFlyweights.add(pageFlyweight);
-            final Page page = pageFlyweight.page;
+            final Page page = pageFlyweight.getPage();
             if (page instanceof PageGroup) {
                 parent = (PageGroup) page;
             }
         }
     }
 
-    private void chopLoadedFlyweightsDownToSize(int level) {
+    protected synchronized void chopLoadedFlyweightsDownToSize(int level) {
+        level = Math.max(0, level);
         while (loadedFlyweights.size() > level) {
             final PageFlyweight unloadedFlyweight = loadedFlyweights.removeLast();
-            Page page = loadedFlyweights.get(loadedFlyweights.size() - 1).page;
-            if (page == null) {
-                page = rootPageGroup;
+            Page parent = loadedFlyweights.size() > 0 ? loadedFlyweights.get(loadedFlyweights.size() - 1).getPage() : null;
+            if (parent == null) {
+                parent = rootPageGroup;
             }
-            assert (page instanceof PageGroup);
-            unloadedFlyweight.unload((PageGroup) page);
+            assert (parent instanceof PageGroup);
+            unloadedFlyweight.unload((PageGroup) parent);
         }
         assert loadedFlyweights.size() <= level;
     }
 
-    private void loadFlyweight(NavState navState, PageFlyweight pageFlyweight, PageGroup parent) {
+    protected void loadFlyweight(NavState navState, PageFlyweight pageFlyweight, PageGroup parent) {
         if (pageFlyweight == null) return;
         pageFlyweight.load(navState.getToken(), navState.getParams(), parent);
     }

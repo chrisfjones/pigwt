@@ -10,6 +10,10 @@ public abstract class PageFlyweight<P extends Page> {
         this.uid = uid;
     }
 
+    public P getPage() {
+        return page;
+    }
+
     public abstract void load(String token, Map<String, String> params, PageGroup parent);
 
     public void unload(PageGroup parent) {
