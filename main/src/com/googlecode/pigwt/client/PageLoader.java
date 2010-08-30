@@ -31,7 +31,9 @@ public class PageLoader {
                 parent = group.getPage();
             } else {
                 chopLoadedFlyweightsDownToSize(level);
-                flyweightsToLoad.add(group);
+                if (group != null) {
+                    flyweightsToLoad.add(group);
+                }
             }
             String firstPart;
             firstPart = dotIndex > 0 ? token.substring(0, dotIndex) : token;

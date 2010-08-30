@@ -107,6 +107,16 @@ public class PageLoaderTest {
     }
 
     @Test
+    public void enactStateChange_rootLeafToLeafNoGroups() {
+        // todo
+    }
+
+    @Test
+    public void enactStateChange_leafToRootLeafNoGroups() {
+        // todo
+    }
+
+    @Test
     public void chopLoadedFlyweightsDownToSize_0() {
         assertEquals(0, loader.loadedFlyweights.size());
         loader.chopLoadedFlyweightsDownToSize(0);

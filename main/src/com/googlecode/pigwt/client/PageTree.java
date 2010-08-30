@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PageTree {
-    protected static class Node {
+    public static class Node {
         private String token;
         private PageFlyweight<? extends PageGroup> groupFlyweight;
         private PageFlyweight<? extends Page> pageFlyweight;
