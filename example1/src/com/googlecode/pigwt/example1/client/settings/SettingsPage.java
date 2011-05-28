@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class SettingsPage extends Label implements Page {
     public SettingsPage() {
-        super("I M TEH SAYTINZ PAYJ");
+        super("Settings Page");
     }
 
     public void show(PageGroup parent, Map<String, String> params) {

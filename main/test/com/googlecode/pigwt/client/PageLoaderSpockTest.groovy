@@ -1,49 +1,44 @@
-package com.googlecode.pigwt.client;
+package com.googlecode.pigwt.client
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.mockito.InOrder
+import spock.lang.Specification
+import static org.mockito.Mockito.*
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
-
-public class PageLoaderTest {
-    private PageLoader loader;
-
-    @Before
-    public void setup() {
-        loader = new PageLoader(null);
-    }
-
-    @Test
-    public void enactStateChange_null() {
+class PageLoaderSpockTest extends Specification  {
+    PageLoader loader = new PageLoader(null);
+    
+    def "enactStateChange - null"() {
+        given:
         loader.enactNavStateChange(new NavState(""));
         loader.tree = new PageTree(null);
         loader.enactNavStateChange(new NavState(""));
     }
 
-    @Test
-    public void enactStateChange_rootWithGroupFresh() {
+    def "enactStateChange - root with group, fresh"() {
+        given:
+        PageLoader loader = new PageLoader(null);
         final PageTree.Node root = new PageTree.Node("");
         final PageFlyweight groupFlyweight = mock(PageFlyweight.class);
         final PageGroup group = mock(PageGroup.class);
         when(groupFlyweight.getPage()).thenReturn(group);
         root.setGroupFlyweight(groupFlyweight);
-        
+
         final PageFlyweight pageFlyweight = mock(PageFlyweight.class);
         root.setPageFlyweight(pageFlyweight);
-        
+
         loader.tree = new PageTree(root);
         final NavState navState = new NavState("");
         loader.enactNavStateChange(navState);
 
+
+        expect:
         final InOrder order = inOrder(groupFlyweight, pageFlyweight);
         order.verify(groupFlyweight).load(navState.getToken(), navState.getParams(), loader.rootPageGroup);
         order.verify(pageFlyweight).load(navState.getToken(), navState.getParams(), group);
-    }
+	}
 
-    @Test
-    public void enactStateChange_rootNoGroupWithLoaded() {
+    def "enactStateChange - root No Group With Loaded"() {
+        given:
         final PageTree.Node root = new PageTree.Node("");
         final PageFlyweight pageFlyweight = mock(PageFlyweight.class);
         root.setPageFlyweight(pageFlyweight);
@@ -57,14 +52,15 @@ public class PageLoaderTest {
         final NavState navState = new NavState("");
         loader.enactNavStateChange(navState);
 
+        expect:
         final InOrder order = inOrder(loaded1, loaded2, pageFlyweight);
         order.verify(loaded2).unload(loader.rootPageGroup);
         order.verify(loaded1).unload(loader.rootPageGroup);
         order.verify(pageFlyweight).load(navState.getToken(), navState.getParams(), loader.rootPageGroup);
     }
 
-    @Test
-    public void enactStateChange_rootWithLoadedGroup() {
+    def "enactStateChange - root with loaded group"() {
+        given:
         final PageTree.Node root = new PageTree.Node("");
         final PageFlyweight pageFlyweight = mock(PageFlyweight.class);
         root.setPageFlyweight(pageFlyweight);
@@ -82,6 +78,7 @@ public class PageLoaderTest {
         final NavState navState = new NavState("");
         loader.enactNavStateChange(navState);
 
+        expect:
         final InOrder order = inOrder(loadedPage, pageFlyweight);
         order.verify(loadedPage).unload(loadedGroup);
         order.verify(pageFlyweight).load(navState.getToken(), navState.getParams(), loadedGroup);
@@ -90,33 +87,27 @@ public class PageLoaderTest {
         verify(loadedGroupFlyweight, never()).load(anyString(), anyMap(), any(PageGroup.class));
     }
 
-    @Test
-    public void enactStateChange_leafWithGroupFresh() {
+    def "enactStateChange leafWithGroupFresh"() {
         // todo
     }
 
-    @Test
-    public void enactStateChange_leafNoGroupFresh() {
+    def "enactStateChange leafNoGroupFresh"() {
         // todo
     }
 
-    @Test
-    public void enactStateChange_leafCommonGroupLoaded() {
+    def "enactStateChange_leafCommonGroupLoaded"() {
         // todo
     }
 
-    @Test
-    public void enactStateChange_rootLeafToLeafNoGroups() {
+    def "enactStateChange_rootLeafToLeafNoGroups"() {
         // todo
     }
 
-    @Test
-    public void enactStateChange_leafToRootLeafNoGroups() {
+    def "enactStateChange_leafToRootLeafNoGroups"() {
         // todo
     }
 
-    @Test
-    public void chopLoadedFlyweightsDownToSize_0() {
+    def "chopLoadedFlyweightsDownToSize_0"() {
         assertEquals(0, loader.loadedFlyweights.size());
         loader.chopLoadedFlyweightsDownToSize(0);
         assertEquals(0, loader.loadedFlyweights.size());
@@ -126,28 +117,30 @@ public class PageLoaderTest {
         assertEquals(0, loader.loadedFlyweights.size());
     }
 
-    @Test
-    public void chopLoadedFlyweightsDownToSize() {
+    def "chopLoadedFlyweightsDownToSize"() {
+        given:
         loader.loadedFlyweights.add(mock(PageFlyweight.class));
         loader.loadedFlyweights.add(mock(PageFlyweight.class));
         loader.loadedFlyweights.add(mock(PageFlyweight.class));
-        assertEquals(3, loader.loadedFlyweights.size());
+
+        expect:
+        3 == loader.loadedFlyweights.size();
+
         loader.chopLoadedFlyweightsDownToSize(2);
-        assertEquals(2, loader.loadedFlyweights.size());
+        2 == loader.loadedFlyweights.size();
+
         loader.chopLoadedFlyweightsDownToSize(0);
-        assertEquals(0, loader.loadedFlyweights.size());
+        0 == loader.loadedFlyweights.size();
     }
 
-    @Test
-    public void loadFlyweight() {
+    def "loadFlyweight"() {
         final NavState navState = new NavState("token");
         final PageFlyweight pageFlyweight = mock(PageFlyweight.class);
         loader.loadFlyweight(navState, pageFlyweight, null);
         verify(pageFlyweight).load(navState.getToken(), navState.getParams(), null);
     }
 
-    @Test
-    public void loadFlyweight_null() {
+    def "loadFlyweight_null"() {
         final NavState navState = new NavState("token");
         loader.loadFlyweight(navState, null, null);
     }
