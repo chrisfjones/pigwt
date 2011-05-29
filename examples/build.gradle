@@ -1,0 +1,37 @@
+defaultTasks "gwt"
+
+apply plugin: 'java'
+
+version = '0.1-SNAPSHOT'
+
+repositories {
+    flatDir(dirs: "$buildDir/../../core/build/libs")
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.gwt:gwt-user:2.3.0',
+            'com.google.gwt:gwt-dev:2.3.0',
+            ':core:0.1-SNAPSHOT',
+            'javax.validation:validation-api:1.0.0.GA',
+            'javax.validation:validation-api:1.0.0.GA:sources'
+    runtime 'com.google.gwt:gwt-user:2.3.0',
+            'com.google.gwt:gwt-dev:2.3.0',
+            'javax.validation:validation-api:1.0.0.GA',
+            'javax.validation:validation-api:1.0.0.GA:sources'
+}
+
+task(gwt, dependsOn: 'classes', type: JavaExec) {
+    main = 'com.google.gwt.dev.Compiler'
+    classpath {
+        [ sourceSets.main.java.srcDirs, sourceSets.main.runtimeClasspath ]
+    }
+    args 'com.googlecode.pigwt.pigwtplacestest.pigwtplacestest', '-gen', "$buildDir/gen"
+}
+task(devMode, dependsOn: 'classes', type: JavaExec) {
+    main = 'com.google.gwt.dev.DevMode'
+    classpath {
+        [ sourceSets.main.java.srcDirs, sourceSets.main.runtimeClasspath ]
+    }
+    args '-startupUrl', 'app', '-gen', "$buildDir/gen", 'com.googlecode.pigwt.pigwtplacestest.pigwtplacestest'
+}

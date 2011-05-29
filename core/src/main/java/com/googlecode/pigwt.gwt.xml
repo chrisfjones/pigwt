@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE module PUBLIC '-//Google Inc.//DTD Google Web Toolkit 2.0//EN'
+        'http://google-web-toolkit.googlecode.com/svn/releases/2.0/distro-source/core/src/gwt-module.dtd'>
+
+<module rename-to='app'>
+    <inherits name='com.google.gwt.user.User'/>
+    <inherits name="com.google.gwt.activity.Activity"/>
+    <inherits name="com.google.gwt.place.Place"/>
+    <source path='pigwt/client'/>
+    <public path='pigwt/public'/>
+
+    <generate-with class="com.googlecode.pigwt.rebind.PigwtGenerator">
+      <when-type-assignable class="com.googlecode.pigwt.client.Pigwt"/>
+    </generate-with>
+
+    <entry-point class='com.googlecode.pigwt.client.EntryPoint'/>
+</module>

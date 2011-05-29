@@ -1,0 +1,21 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder
+        xmlns:ui='urn:ui:com.google.gwt.uibinder'
+        xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+    <g:HTMLPanel>
+        <table border="1">
+            <tr>
+                <td>
+                    <g:VerticalPanel>
+                        <g:Label ui:field="home">Home</g:Label>
+                        <g:Label ui:field="contacts">Contacts</g:Label>
+                        <g:Label ui:field="settings">Settings</g:Label>
+                    </g:VerticalPanel>
+                </td>
+                <td>
+                    <g:SimplePanel ui:field="main"></g:SimplePanel>
+                </td>
+            </tr>
+        </table>
+    </g:HTMLPanel>
+</ui:UiBinder>

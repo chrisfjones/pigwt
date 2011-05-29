@@ -1,0 +1,21 @@
+defaultTasks "clean", "build"
+
+apply plugin: 'java'
+
+version = '0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.gwt:gwt-user:2.3.0', 'com.google.gwt:gwt-dev:2.3.0'
+}
+
+//jar.baseName 'pigwt-core'  wtf?
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'pigwt-core', 'Implementation-Version': version
+    }
+    from sourceSets.main.java.srcDirs
+}
