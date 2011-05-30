@@ -15,6 +15,7 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
+import com.googlecode.pigwt.client.DefaultShell;
 import com.googlecode.pigwt.client.PigwtInject;
 import com.googlecode.pigwt.client.PigwtPlace;
 import com.googlecode.pigwt.client.TokenizerUtil;
@@ -244,7 +245,7 @@ public class PigwtGenerator extends Generator {
     private void generateGetShellMethods(final SourceWriter sourceWriter, PigwtTree tree) {
         // todo: inject or factoryize construction of the shells
         final JClassType rootShell = tree.root.shellClass;
-        String shellType = rootShell != null ? rootShell.getQualifiedSourceName() : SimplePanel.class.getCanonicalName();
+        String shellType = rootShell != null ? rootShell.getQualifiedSourceName() : DefaultShell.class.getCanonicalName();
         sourceWriter.println(format("private final Shell rootShell = (Shell)GWT.create({0}.class);", shellType));
 
 

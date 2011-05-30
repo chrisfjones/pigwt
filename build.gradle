@@ -1,0 +1,57 @@
+defaultTasks "tasks"
+
+subprojects {
+    apply plugin: 'java'
+    version = '0.1-SNAPSHOT'
+    repositories {
+        mavenCentral()
+    }
+}
+
+project(':core') {
+    defaultTasks "clean", "jar"
+    dependencies {
+        compile 'com.google.gwt:gwt-user:2.3.0', 'com.google.gwt:gwt-dev:2.3.0'
+    }
+
+    configurations {
+        pigwtCoreJar
+    }
+    jar {
+        baseName = 'pigwt-core'
+        dependsOn classes
+        manifest {
+            attributes 'Implementation-Title': 'pigwt-core', 'Implementation-Version': version
+        }
+        from sourceSets.main.java.srcDirs
+    }
+    artifacts {
+        pigwtCoreJar jar
+    }
+}
+
+configure(subprojects.findAll {it.name.startsWith('examples/')}) {
+    def shortName = it.name - 'examples/'
+    defaultTasks "gwt"
+    dependencies {
+        compile 'com.google.gwt:gwt-user:2.3.0',
+                'com.google.gwt:gwt-dev:2.3.0',
+                'javax.validation:validation-api:1.0.0.GA',
+                'javax.validation:validation-api:1.0.0.GA:sources',
+                project(path: ':core', configuration: 'pigwtCoreJar')
+    }
+    task(gwt, dependsOn: 'classes', type: JavaExec) {
+        main = 'com.google.gwt.dev.Compiler'
+        classpath {
+            [ sourceSets.main.java.srcDirs, sourceSets.main.runtimeClasspath ]
+        }
+        args "com.googlecode.pigwt.examples.$shortName", '-gen', "$buildDir/gen"
+    }
+    task(devMode, dependsOn: 'classes', type: JavaExec) {
+        main = 'com.google.gwt.dev.DevMode'
+        classpath {
+            [ sourceSets.main.java.srcDirs, sourceSets.main.runtimeClasspath ]
+        }
+        args '-startupUrl', 'app', '-gen', "$buildDir/gen", "com.googlecode.pigwt.examples.$shortName"
+    }
+}
