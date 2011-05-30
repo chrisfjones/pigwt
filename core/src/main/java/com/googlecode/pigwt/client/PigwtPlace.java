@@ -2,6 +2,10 @@ package com.googlecode.pigwt.client;
 
 import com.google.gwt.place.shared.Place;
 
+/**
+ * A place in pigwt. Each of your packages that contains an Activity will automatically get one of these things, you
+ * don't need to create any.
+ */
 public abstract class PigwtPlace extends Place {
     private String[] params;
 

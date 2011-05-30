@@ -9,25 +9,52 @@ import com.google.gwt.place.shared.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.RootPanel;
 
-public abstract class Pigwt implements ActivityMapper, PlaceChangeEvent.Handler {
+/**
+ * Your window into the pigwt universe.
+ * @see Pigwt get()
+ */
+public abstract class Pigwt implements ActivityMapper {
     private static final Pigwt instance = ((Pigwt) GWT.create(Pigwt.class));
     protected PlaceHistoryMapper historyMapper;
     protected PlaceController placeController;
     private EventBus eventBus;
     private ActivityManager activityManager;
 
+    /**
+     * Get the singleton Pigwt instance.
+     * @return The one and only Pigwt
+     */
     public static Pigwt get() {
         return instance;
     }
-    
+
+    /**
+     * Go to the specified place with the specified parameters. The history will reflect the new place.
+     * @param pkg The package/place you want to go to
+     * @param params Any number of String parameters you want to pass along
+     */
+    public final void goTo(String pkg, String ... params) {
+        placeController.goTo(historyMapper.getPlace(TokenizerUtil.tokenize(pkg, params)));
+    }
+
     protected void init() {
         eventBus = new SimpleEventBus();
         placeController = new PlaceController(eventBus);
         historyMapper = getPlaceHistoryMapper();
         PlaceHistoryHandler historyHandler = new PlaceHistoryHandler(historyMapper);
 
-        // todo: weak link, we register Pigwt as a PlaceChangeEvent handler before the activity manager to we can handle the shell game first
-        eventBus.addHandler(PlaceChangeEvent.TYPE, this);
+        // todo: weak link, we register Pigwt as a PlaceChangeEvent handler before the activity manager so we can handle the shell game first
+        eventBus.addHandler(PlaceChangeEvent.TYPE, new PlaceChangeEvent.Handler() {
+            @Override
+            public void onPlaceChange(final PlaceChangeEvent event) {
+                final Place newPlace = event.getNewPlace();
+                if (!(newPlace instanceof PigwtPlace)) {
+                    return;
+                }
+                final Shell newShell = getNestedShell(((PigwtPlace) newPlace).getPrefix());
+                activityManager.setDisplay(newShell);
+            }
+        });
         activityManager = new ActivityManager(this, eventBus);
 
         final Shell rootShell = getNestedShell("");
@@ -40,20 +67,6 @@ public abstract class Pigwt implements ActivityMapper, PlaceChangeEvent.Handler 
 
     protected void fail(String shortPackageName, Throwable reason) {
         Window.alert("Unable to load '" + shortPackageName + "' due to: " + reason.getLocalizedMessage());
-    }
-
-    public final void goTo(String page, String ... params) {
-        placeController.goTo(historyMapper.getPlace(TokenizerUtil.tokenize(page, params)));
-    }
-
-    @Override
-    public void onPlaceChange(final PlaceChangeEvent event) {
-        final Place newPlace = event.getNewPlace();
-        if (!(newPlace instanceof PigwtPlace)) {
-            return;
-        }
-        final Shell newShell = getNestedShell(((PigwtPlace) newPlace).getPrefix());
-        activityManager.setDisplay(newShell);
     }
 
     private Shell getNestedShell(final String placePrefix) {

@@ -19,7 +19,7 @@ public abstract class ActivityFlyweight extends AbstractActivity {
         this.proxiedActivity = proxiedActivity;
     }
 
-    public Activity getProxiedActivity() {
+    protected Activity getProxiedActivity() {
         return proxiedActivity;
     }
 }

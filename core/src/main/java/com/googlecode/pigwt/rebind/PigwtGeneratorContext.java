@@ -8,11 +8,9 @@ import com.google.gwt.dev.cfg.ModuleDef;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.resource.impl.PathPrefix;
 import com.google.gwt.dev.resource.impl.PathPrefixSet;
-import com.googlecode.pigwt.client.PigwtInjectable;
 import com.googlecode.pigwt.client.Shell;
 
 import java.io.PrintWriter;
-import java.util.List;
 
 class PigwtGeneratorContext {
     private final GeneratorContext context;
