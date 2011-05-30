@@ -1,0 +1,21 @@
+==== soon =====
+-- implement while building out 'bigapp'
+    -- DecoratableEventBus
+       -- EventBusDecorator
+          -- boolean beforeFireEvent
+          -- void afterFireEvent
+       -- Pigwt.decorateEventBus(EventBusDecorator)
+
+    -- Modals?
+    -- login/logout/protected places (Guards)
+-- gin support
+
+
+
+==== cleanup ======
+-- Whats the 'right' way to find module package? (not the hacks that rely on private fields)
+
+
+==== future =======
+-- plug in to UiBinder somehow to make place linking easier (or implement custom link widget)
+-- web vs mobile version?
