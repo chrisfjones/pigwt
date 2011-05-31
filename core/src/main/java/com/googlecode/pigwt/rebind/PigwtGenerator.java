@@ -49,6 +49,7 @@ public class PigwtGenerator extends Generator {
             tree = new PigwtTree(this.context);
 
             List<String> placePrefixes = tree.walkNames();
+            placePrefixes.remove("");
             for (String s : placePrefixes) {
                 generatePlaceClass(s);
                 generateTokenizerClass(s);
@@ -85,6 +86,12 @@ public class PigwtGenerator extends Generator {
     }
 
     private void generateInjectableFields(final SourceWriter sourceWriter, final List<JClassType> injectables) {
+        if (tree.ginjectorProxy != null) {
+            sourceWriter.println(
+                    format("private final {0} injector = GWT.create({0}.class);",
+                            tree.ginjectorProxy.getGinjectorType().getQualifiedSourceName()));
+        }
+
         for (JClassType injectable : injectables) {
             final String injectableFieldName = getInjectableFieldName(injectable);
             sourceWriter.println(format("private final {0} {1} = ({0})GWT.create({0}.class);\n",
@@ -96,8 +103,8 @@ public class PigwtGenerator extends Generator {
         return injectable.getQualifiedSourceName().replace(".", "_") + "_injectable";
     }
 
-    // sadly, this is a rewrite of the PlaceHistoryMapperGenerator because I couldn't figure out how to create a
-    // GWT.create(MyPlaceHistoryMapper.class) work with generated tokenizers in the @WithTokenizers annotation
+    // sadly, this is a rewrite of the PlaceHistoryMapperGenerator because I couldn't figure out how to get
+    // GWT.create(MyPlaceHistoryMapper.class) to work with generated tokenizers in the @WithTokenizers annotation
     private void generatePlaceHistoryMapperClass(List<String> placePrefixes) {
         PrintWriter printWriter = context.createPrintWriter(logger, packageName, "PlaceHistoryMapper_gen");
         if (printWriter == null) return;
@@ -245,16 +252,13 @@ public class PigwtGenerator extends Generator {
     }
 
     private void generateGetShellMethods(final SourceWriter sourceWriter, PigwtTree tree) {
-        // todo: inject or factoryize construction of the shells
-        final JClassType rootShell = tree.root.shellClass;
-        String shellType = rootShell != null ? rootShell.getQualifiedSourceName() : DefaultShell.class.getCanonicalName();
-        sourceWriter.println(format("private final Shell rootShell = (Shell)GWT.create({0}.class);", shellType));
-
+        writeShellDeclaration(sourceWriter, "rootShell", tree.root.shellClass != null ? tree.root.shellClass : context.findType(DefaultShell.class));
 
         Map<String, JClassType> prefixesToShells = tree.walkPrefixesToShells();
+        prefixesToShells.remove("");
         for (Map.Entry<String, JClassType> prefixToShell : prefixesToShells.entrySet()) {
             String classPrefix = prefixToShell.getKey().replace(".", "__");
-            sourceWriter.println(format("private final Shell {0}_Shell = (Shell)GWT.create({1}.class);", classPrefix, prefixToShell.getValue().getQualifiedSourceName()));
+            writeShellDeclaration(sourceWriter, classPrefix + "_Shell", prefixToShell.getValue());
         }
         writeMethod(sourceWriter, "protected Shell getRootShell()", "return rootShell;");
 
@@ -267,14 +271,20 @@ public class PigwtGenerator extends Generator {
         writeMethod(sourceWriter, "protected Shell getShell(final String placePrefix)", body.toString());
     }
 
+    private void writeShellDeclaration(final SourceWriter sourceWriter, final String declarationName, final JClassType shellClass) {
+        boolean gin = tree.ginjectorProxy != null && tree.ginjectorProxy.hasGetterFor(shellClass);
+        if (gin) {
+            sourceWriter.println(format("private final Shell {0} = injector.get{1}();", declarationName, shellClass.getName()));
+        } else {
+            sourceWriter.println(format("private final Shell {0} = (Shell)GWT.create({1}.class);", declarationName, shellClass.getQualifiedSourceName()));
+        }
+    }
+
     private void generateGetActivityMethod(PigwtTree tree, SourceWriter sourceWriter)
             throws NotFoundException, NoSuchFieldException, IllegalAccessException {
         StringBuilder body = new StringBuilder();
         
-        JClassType rootActivity = tree.root.activityClass;
-        body.append(
-                format("if (p instanceof DefaultPlace) return new {0}();\n", rootActivity.getQualifiedSourceName()));
-
+        writeActivityLine(body, tree.root.name, tree.root);
         writeActivityLines(body, tree.root.name, tree.root.children);
 
         body.append("return null;");
@@ -290,26 +300,39 @@ public class PigwtGenerator extends Generator {
     }
 
     protected static final String activityLineTemplate =
-            "if (p instanceof {0}_Place) '{'\n" +
-                    "  return new ActivityFlyweight((PigwtPlace)p) '{'\n" +
-                    "    @Override\n" +
-                    "    public void start(final AcceptsOneWidget panel, final EventBus eventBus) '{'\n" +
-                    "      GWT.runAsync(new RunAsyncCallback() '{'\n" +
-                    "        public void onFailure(Throwable reason) '{'\n" +
-                    "          fail(\"{0}\", reason);\n" +
-                    "        }\n" +
-                    "        public void onSuccess() '{'\n" +
-                    "          setProxiedActivity(new {1}({2}));\n" +
-                    "          getProxiedActivity().start(panel, eventBus);\n" +
-                    "        '}'\n" +
-                    "      '}');\n" +
-                    "    '}'\n" +
-                    "  '}';\n" +
-                    "'}'\n";
+            "if (p instanceof {0}) '{'\n" +
+            "  return new ActivityFlyweight((PigwtPlace)p) '{'\n" +
+            "    @Override\n" +
+            "    public void start(final AcceptsOneWidget panel, final EventBus eventBus) '{'\n" +
+            "      GWT.runAsync(new RunAsyncCallback() '{'\n" +
+            "        public void onFailure(Throwable reason) '{'\n" +
+            "          fail(\"{1}\", reason);\n" +
+            "        }\n" +
+            "        public void onSuccess() '{'\n" +
+            "          setProxiedActivity(new {2}({3}));\n" +
+            "          getProxiedActivity().start(panel, eventBus);\n" +
+            "        '}'\n" +
+            "      '}');\n" +
+            "    '}'\n" +
+            "  '}';\n" +
+            "'}'\n";
 
     private void writeActivityLine(StringBuilder body, final String prefix, PigwtTree.Node node) throws NotFoundException {
         JConstructor constructor = findActivityConstructor(node.activityClass);
+        String paramString = buildParamString(constructor);
 
+        final String classPrefix = prefix + node.name;
+        final String placeClass = "".equals(classPrefix) ? "DefaultPlace" : classPrefix + "_Place";
+        
+        body.append(format(
+                activityLineTemplate,
+                placeClass,
+                classPrefix,
+                node.activityClass.getQualifiedSourceName(),
+                paramString));
+    }
+
+    private String buildParamString(final JConstructor constructor) {
         StringBuilder paramString = new StringBuilder("");
         int i = 0;
         String comma = "";
@@ -325,8 +348,7 @@ public class PigwtGenerator extends Generator {
             }
             comma = ",";
         }
-        final String classPrefix = prefix + node.name;
-        body.append(format(activityLineTemplate, classPrefix, node.activityClass.getQualifiedSourceName(), paramString.toString()));
+        return paramString.toString();
     }
 
     private JConstructor findActivityConstructor(JClassType activityClass) {

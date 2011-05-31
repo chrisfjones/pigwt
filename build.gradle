@@ -11,7 +11,7 @@ subprojects {
 project(':core') {
     defaultTasks "clean", "jar"
     dependencies {
-        compile 'com.google.gwt:gwt-user:2.3.0', 'com.google.gwt:gwt-dev:2.3.0'
+        compile 'com.google.gwt:gwt-user:2.3.0', 'com.google.gwt:gwt-dev:2.3.0', 'com.google.gwt.inject:gin:1.5.0'
     }
 
     configurations {

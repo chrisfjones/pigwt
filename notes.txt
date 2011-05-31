@@ -8,14 +8,17 @@
 
     -- Modals?
     -- login/logout/protected places (Guards)
--- gin support
+-- gin support (single injector)
+-- logging support
 
 
-
-==== cleanup ======
+==== bugs/cleanup ======
 -- Whats the 'right' way to find module package? (not the hacks that rely on private fields)
+-- paramaters on root activity
+-- injectables/injectors should be heirarchy aware
 
 
 ==== future =======
 -- plug in to UiBinder somehow to make place linking easier (or implement custom link widget)
 -- web vs mobile version?
+-- gin support (multiple injectors)
