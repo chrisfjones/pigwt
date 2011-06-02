@@ -18,7 +18,7 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.googlecode.pigwt.client.DefaultShell;
-import com.googlecode.pigwt.client.PigwtInject;
+import com.googlecode.pigwt.client.Param;
 import com.googlecode.pigwt.client.PigwtPlace;
 import com.googlecode.pigwt.client.TokenizerUtil;
 
@@ -39,14 +39,14 @@ public class PigwtGenerator extends Generator {
     @Override
     public String generate(
             TreeLogger logger,
-            GeneratorContext context,
+            GeneratorContext generatorContext,
             String typeName) throws UnableToCompleteException {
         this.logger = logger;
 
         try {
-            this.context = new PigwtGeneratorContext(context, logger);
-            packageName = this.context.getModulePackage().getName();
-            tree = new PigwtTree(this.context);
+            context = new PigwtGeneratorContext(generatorContext, logger);
+            packageName = context.getModulePackage().getName();
+            tree = new PigwtTree(context);
 
             List<String> placePrefixes = tree.walkNames();
             placePrefixes.remove("");
@@ -54,16 +54,54 @@ public class PigwtGenerator extends Generator {
                 generatePlaceClass(s);
                 generateTokenizerClass(s);
             }
+            String ginjectorName = null;
+            if (context.isGinAvailable()) {
+                ginjectorName = generateGinjectorInterface();
+            }
             generatePlaceHistoryMapperClass(placePrefixes);
-            generatePigwtClass();
-            
+            generatePigwtClass(ginjectorName);
+
         } catch (Exception e) {
             logger.log(TreeLogger.ERROR, "Failed to generate Pigwt support classes", e);
         }
         return packageName + "." + className;
     }
 
-    private void generatePigwtClass() throws Exception {
+    private String generateGinjectorInterface() {
+        final JClassType clientGinjectorType = tree.ginjector;
+        final String pigwtGinjectorClassName = clientGinjectorType.getName() + "_PigwtGinjector";
+
+        PrintWriter printWriter = context.createPrintWriter(logger, packageName, pigwtGinjectorClassName);
+        if (printWriter == null) return null;
+        ClassSourceFileComposerFactory composer = new ClassSourceFileComposerFactory(packageName, pigwtGinjectorClassName);
+        composer.makeInterface();
+        composer.addImplementedInterface(clientGinjectorType.getQualifiedSourceName());
+        SourceWriter sourceWriter = composer.createSourceWriter(context.getGeneratorContext(), printWriter);
+
+        for (JClassType activityType : tree.walkActivityTypes()) {
+            writeGinjectorActivityGetter(sourceWriter, activityType);
+        }
+        for (JClassType shellType : tree.walkPrefixesToShells().values()) {
+            writeGinjectorActivityGetter(sourceWriter, shellType);
+        }
+
+        sourceWriter.outdent();
+        sourceWriter.println("}");
+        context.commit(printWriter);
+        return pigwtGinjectorClassName;
+    }
+
+    private void writeGinjectorActivityGetter(final SourceWriter sourceWriter, final JClassType activityType) {
+        sourceWriter.println(format("{0} {1}();",
+                activityType.getQualifiedSourceName(),
+                buildGetterFor(activityType)));
+    }
+
+    private String buildGetterFor(final JClassType type) {
+        return "get_" + type.getQualifiedSourceName().replaceAll("\\.", "_");
+    }
+
+    private void generatePigwtClass(final String ginjectorName) throws Exception {
         PrintWriter printWriter;
         printWriter = context.createPrintWriter(logger, packageName, className);
         if (printWriter == null) return;
@@ -72,9 +110,11 @@ public class PigwtGenerator extends Generator {
         composer.setSuperclass(ABSTRACT_PIGWT);
         addImports(composer);
 
-        SourceWriter sourceWriter;
-        sourceWriter = composer.createSourceWriter(context.getGeneratorContext(), printWriter);
+        SourceWriter sourceWriter = composer.createSourceWriter(context.getGeneratorContext(), printWriter);
 
+        if (ginjectorName != null) {
+            sourceWriter.println(format("private final {0} injector = GWT.create({0}.class);", ginjectorName));
+        }
         generateInjectableFields(sourceWriter, tree.injectables);
         generateGetShellMethods(sourceWriter, tree);
         generateGetPlaceHistoryMapperMethod(sourceWriter);
@@ -86,12 +126,6 @@ public class PigwtGenerator extends Generator {
     }
 
     private void generateInjectableFields(final SourceWriter sourceWriter, final List<JClassType> injectables) {
-        if (tree.ginjectorProxy != null) {
-            sourceWriter.println(
-                    format("private final {0} injector = GWT.create({0}.class);",
-                            tree.ginjectorProxy.getGinjectorType().getQualifiedSourceName()));
-        }
-
         for (JClassType injectable : injectables) {
             final String injectableFieldName = getInjectableFieldName(injectable);
             sourceWriter.println(format("private final {0} {1} = ({0})GWT.create({0}.class);\n",
@@ -136,7 +170,7 @@ public class PigwtGenerator extends Generator {
         sourceWriter.indent();
 
         sourceWriter.println("if (\"\".equals(prefix)) return GWT.create(DefaultPlace.Tokenizer.class);");
-        
+
         for (String s : placePrefixes) {
             final String classPrefix = s.replace(".", "__");
             sourceWriter.println(format("if (\"{0}\".equals(prefix)) '{'", escape(s)));
@@ -272,9 +306,8 @@ public class PigwtGenerator extends Generator {
     }
 
     private void writeShellDeclaration(final SourceWriter sourceWriter, final String declarationName, final JClassType shellClass) {
-        boolean gin = tree.ginjectorProxy != null && tree.ginjectorProxy.hasGetterFor(shellClass);
-        if (gin) {
-            sourceWriter.println(format("private final Shell {0} = injector.get{1}();", declarationName, shellClass.getName()));
+        if (context.isGinAvailable()) {
+            sourceWriter.println(format("private final Shell {0} = injector.{1}();", declarationName, buildGetterFor(shellClass)));
         } else {
             sourceWriter.println(format("private final Shell {0} = (Shell)GWT.create({1}.class);", declarationName, shellClass.getQualifiedSourceName()));
         }
@@ -283,7 +316,7 @@ public class PigwtGenerator extends Generator {
     private void generateGetActivityMethod(PigwtTree tree, SourceWriter sourceWriter)
             throws NotFoundException, NoSuchFieldException, IllegalAccessException {
         StringBuilder body = new StringBuilder();
-        
+
         writeActivityLine(body, tree.root.name, tree.root);
         writeActivityLines(body, tree.root.name, tree.root.children);
 
@@ -301,35 +334,46 @@ public class PigwtGenerator extends Generator {
 
     protected static final String activityLineTemplate =
             "if (p instanceof {0}) '{'\n" +
-            "  return new ActivityFlyweight((PigwtPlace)p) '{'\n" +
-            "    @Override\n" +
-            "    public void start(final AcceptsOneWidget panel, final EventBus eventBus) '{'\n" +
-            "      GWT.runAsync(new RunAsyncCallback() '{'\n" +
-            "        public void onFailure(Throwable reason) '{'\n" +
-            "          fail(\"{1}\", reason);\n" +
-            "        }\n" +
-            "        public void onSuccess() '{'\n" +
-            "          setProxiedActivity(new {2}({3}));\n" +
-            "          getProxiedActivity().start(panel, eventBus);\n" +
-            "        '}'\n" +
-            "      '}');\n" +
-            "    '}'\n" +
-            "  '}';\n" +
-            "'}'\n";
+                    "  return new ActivityFlyweight((PigwtPlace)p) '{'\n" +
+                    "    @Override\n" +
+                    "    public void start(final AcceptsOneWidget panel, final EventBus eventBus) '{'\n" +
+                    "      GWT.runAsync(new RunAsyncCallback() '{'\n" +
+                    "        public void onFailure(Throwable reason) '{'\n" +
+                    "          fail(\"{1}\", reason);\n" +
+                    "        }\n" +
+                    "        public void onSuccess() '{'\n" +
+                    "          {2} activity = {3};\n" +
+                    "          {4}\n" +
+                    "          setProxiedActivity(activity);\n" +
+                    "          getProxiedActivity().start(panel, eventBus);\n" +
+                    "        '}'\n" +
+                    "      '}');\n" +
+                    "    '}'\n" +
+                    "  '}';\n" +
+                    "'}'\n";
 
     private void writeActivityLine(StringBuilder body, final String prefix, PigwtTree.Node node) throws NotFoundException {
-        JConstructor constructor = findActivityConstructor(node.activityClass);
-        String paramString = buildParamString(constructor);
+        String newActivityBlock;
+        if (context.isGinAvailable()) {
+            newActivityBlock = format("injector.{0}()", buildGetterFor(node.activityType));
+        } else {
+            JConstructor constructor = findActivityConstructor(node.activityType);
+            String paramString = buildParamString(constructor);
+            newActivityBlock = format("new {0}({1})", node.activityType.getQualifiedSourceName(), paramString);
+        }
+
+        String paramSetters = buildParamSetters(node.activityType);
 
         final String classPrefix = prefix + node.name;
         final String placeClass = "".equals(classPrefix) ? "DefaultPlace" : classPrefix + "_Place";
-        
+
         body.append(format(
                 activityLineTemplate,
                 placeClass,
                 classPrefix,
-                node.activityClass.getQualifiedSourceName(),
-                paramString));
+                node.activityType.getQualifiedSourceName(),
+                newActivityBlock,
+                paramSetters));
     }
 
     private String buildParamString(final JConstructor constructor) {
@@ -338,9 +382,7 @@ public class PigwtGenerator extends Generator {
         String comma = "";
         for (JParameter parameter : constructor.getParameters()) {
             final JType type = parameter.getType();
-            if (context.isStringType(type)) {
-                paramString.append(comma).append(format("getParam({0})", i++));
-            } else if (tree.injectables.contains(type)) {
+            if (tree.injectables.contains(type)) {
                 paramString.append(comma).append(getInjectableFieldName(type));
             } else {
                 // todo: error out properly
@@ -351,25 +393,77 @@ public class PigwtGenerator extends Generator {
         return paramString.toString();
     }
 
+
     private JConstructor findActivityConstructor(JClassType activityClass) {
         JConstructor constructor = null;
         final JConstructor[] constructors = activityClass.getConstructors();
-        if (constructors.length <= 1) {
-            constructor = constructors[0];
-        } else {
-            for (JConstructor c : constructors) {
-                if (c.getAnnotation(PigwtInject.class) != null) {
-                    if (constructor != null) {
-                        logger.log(TreeLogger.WARN,
-                                "Found more than one PigwtInject constructor in " + activityClass.getQualifiedSourceName() + " and I'm using this one: '" + constructor.getReadableDeclaration() + "' and ignoring the others." +
-                                        "If this isn't what you want, remove the @PigwtInject annotation from the constructors that you don't want injected.");
-                        continue;
-                    }
-                    constructor = c;
-                }
+
+        int mostInjectables = -1;
+        // find the constructor with the most injectables
+        for (JConstructor c : constructors) {
+            int injectables = getNumberOfInjectablesInConstructor(c);
+            if (injectables > mostInjectables) {
+                constructor = c;
+                mostInjectables = injectables;
             }
         }
+        if (constructor == null) {
+            // todo: error out properly
+            throw new RuntimeException("Found no suitable constructors for " + activityClass.getQualifiedSourceName() + ". " +
+                    "Pigwt needs all activity class parameters to be @PigwtInjectable unless you're using gin.");
+        }
         return constructor;
+    }
+
+    private int getNumberOfInjectablesInConstructor(final JConstructor constructor) {
+        int i = 0;
+        for (JParameter p : constructor.getParameters()) {
+            if (tree.injectables.contains(p.getType())) {
+                i++;
+            } else {
+                return -1;
+            }
+        }
+        return i;
+    }
+
+    private String buildParamSetters(final JClassType activityClass) {
+        StringBuilder paramSetters = new StringBuilder();
+        String prefixSpaces = "";
+        for (JMethod m : activityClass.getMethods()) {
+            // todo: maybe more validation on the method here
+            if (!m.isAnnotationPresent(Param.class)) {
+                continue;
+            }
+            final JParameter[] parameters = m.getParameters();
+            if (parameters.length > 1) {
+                continue;
+            }
+
+            // set it to null first in case the activity instance was re-used
+            paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(null);");
+
+            paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(");
+
+            if ("java.lang.Integer".equals(parameters[0].getType().getSimpleSourceName())) {
+                paramSetters.append("getIntParam(\"");
+            } else if ("java.lang.Long".equals(parameters[0].getType().getSimpleSourceName())) {
+                paramSetters.append("getLongParam(\"");
+            } else if ("java.lang.String".equals(parameters[0].getType().getSimpleSourceName())) {
+                paramSetters.append("getStringParam(\"");
+            }
+
+            String setterName = m.getName();
+            setterName = setterName.substring(3, setterName.length());
+            char firstChar = Character.toLowerCase(setterName.charAt(0));
+            setterName = firstChar + setterName.substring(1, setterName.length());
+            paramSetters.append(setterName);
+
+            paramSetters.append("\");\n");
+
+            prefixSpaces = "          ";
+        }
+        return paramSetters.toString();
     }
 
     public void writeMethod(SourceWriter writer, String signature, String body) {

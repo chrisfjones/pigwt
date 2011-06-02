@@ -4,18 +4,17 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.googlecode.pigwt.client.PigwtInjectable;
-import com.googlecode.pigwt.rebind.gin.GinjectorProxy;
 
 import java.util.*;
 
 class PigwtTree {
     Node root;
     final List<JClassType> injectables = new ArrayList<JClassType>();
-    GinjectorProxy ginjectorProxy = null;
+    JClassType ginjector = null;
 
     static class Node {
         String name;
-        JClassType activityClass;
+        JClassType activityType;
         JClassType shellClass;
         List<Node> children;
         Node parent;
@@ -35,7 +34,7 @@ class PigwtTree {
         final String rootPackageName = context.getModulePackage().getName();
 
         // todo: for now, just use the first injector we run across on the root classpath
-        ginjectorProxy = context.findGinjectorInPackage(rootPackageName);
+        ginjector = context.findGinjectorInPackage(rootPackageName);
 
         List<JPackage> packages = new ArrayList<JPackage>();
         for (JPackage p : context.getAllPackages()) {
@@ -68,9 +67,14 @@ class PigwtTree {
         }
         packages.remove(p);
 
+        final JClassType activityClass = context.findActivityInPackage(p);
+        if (activityClass == null) {
+            return null;
+        }
+
         final PigwtTree.Node node = new PigwtTree.Node();
+        node.activityType = activityClass;
         node.name = thisPackageName.substring(rootPackageName.length()).replace(".", "");
-        node.activityClass = context.findActivityInPackage(p);
         node.shellClass = context.findShellInPackage(p);
         node.children = new ArrayList<PigwtTree.Node>();
         node.parent = parent;
@@ -115,6 +119,21 @@ class PigwtTree {
         }
         for (Node child : node.children) {
             walkPrefixesToShells(prefixesToShells, child);
+        }
+    }
+
+    public synchronized List<JClassType> walkActivityTypes() {
+        List<JClassType> activityTypes = new ArrayList<JClassType>();
+        walkActivityTypes(activityTypes, root);
+        return activityTypes;
+    }
+
+    private void walkActivityTypes(final List<JClassType> activityTypes, final Node node) {
+        if (node.activityType != null) {
+            activityTypes.add(node.activityType);
+        }
+        for (Node child : node.children) {
+            walkActivityTypes(activityTypes, child);
         }
     }
 }

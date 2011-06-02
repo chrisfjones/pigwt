@@ -9,7 +9,6 @@ import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.resource.impl.PathPrefix;
 import com.google.gwt.dev.resource.impl.PathPrefixSet;
 import com.googlecode.pigwt.client.Shell;
-import com.googlecode.pigwt.rebind.gin.GinjectorProxy;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -23,6 +22,7 @@ class PigwtGeneratorContext {
     private final JPackage modulePackage;
     private final JClassType shellType;
     private final JClassType stringType;
+    private JClassType ginjectorType = null;
 
     public PigwtGeneratorContext(final GeneratorContext context, final TreeLogger logger) throws Exception {
         this.context = context;
@@ -32,6 +32,11 @@ class PigwtGeneratorContext {
         modulePackage = typeOracle.findPackage(findRootPackage());
         shellType = typeOracle.getType(Shell.class.getCanonicalName());
         stringType = typeOracle.getType(String.class.getCanonicalName());
+        try {
+            ginjectorType = typeOracle.getType(GINJECTOR_CLASS_NAME);
+        } catch (NotFoundException e) {
+            // no gin for you
+        }
     }
 
     private String findRootPackage() throws NoSuchFieldException, IllegalAccessException {
@@ -110,19 +115,17 @@ class PigwtGeneratorContext {
     }
 
     public boolean isGinAvailable() {
-        return typeOracle.findType(GINJECTOR_CLASS_NAME) != null;
+        return ginjectorType != null;
     }
 
     public JClassType findType(final Class clazz) {
         return typeOracle.findType(clazz.getCanonicalName());
     }
 
-    public GinjectorProxy findGinjectorInPackage(final String pkg) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public JClassType findGinjectorInPackage(final String pkg) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         if (!isGinAvailable()) {
             return null;
         }
-        final GinjectorProxy ginjectorProxy = (GinjectorProxy)
-                Class.forName("com.googlecode.pigwt.rebind.gin.GinjectorProxyImpl").newInstance();
         final JPackage p = typeOracle.findPackage(pkg);
         for (JClassType t : p.getTypes()) {
             if (t.isInterface() == null) {
@@ -131,11 +134,7 @@ class PigwtGeneratorContext {
             if (!Arrays.asList(t.getImplementedInterfaces()).contains(typeOracle.findType(GINJECTOR_CLASS_NAME))) {
                 continue;
             }
-            if (!ginjectorProxy.hasGinModulesAnnotation(t)) {
-                continue;
-            }
-            ginjectorProxy.setGinjectorType(t);
-            return ginjectorProxy;
+            return t;
         }
         return null;
     }

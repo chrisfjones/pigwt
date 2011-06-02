@@ -6,12 +6,14 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.client.ui.Label;
 
 public class ContactActivity extends AbstractActivity {
+    private String first;
+    private String last;
 
-    private final String first;
-    private final String last;
-
-    public ContactActivity(String first, String last) {
+    public void setFirst(final String first) {
         this.first = first;
+    }
+
+    public void setLast(final String last) {
         this.last = last;
     }
 

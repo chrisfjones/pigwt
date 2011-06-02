@@ -7,11 +7,14 @@ import com.google.gwt.user.client.ui.Label;
 
 public class ContactAddressesActivity extends AbstractActivity {
 
-    private final String first;
-    private final String last;
+    private String first;
+    private String last;
 
-    public ContactAddressesActivity(String first, String last) {
+    public void setFirst(final String first) {
         this.first = first;
+    }
+
+    public void setLast(final String last) {
         this.last = last;
     }
 
