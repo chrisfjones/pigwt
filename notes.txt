@@ -11,6 +11,11 @@
 -- gin support (single injector)
 -- logging support
 
+-- PigwtGeneratorStrategy
+   -- simpleGin
+   -- complexGin
+   -- simpleNoGin
+
 
 ==== bugs/cleanup ======
 -- Whats the 'right' way to find module package? (not the hacks that rely on private fields)
@@ -22,3 +27,11 @@
 -- plug in to UiBinder somehow to make place linking easier (or implement custom link widget)
 -- web vs mobile version?
 -- gin support (multiple injectors)
+
+
+
+
+
+
+==== documentation notes ====
+-- pigwt invites you to [skip ahead] to the part where you make great apps.

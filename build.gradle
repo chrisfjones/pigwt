@@ -12,6 +12,7 @@ project(':core') {
     defaultTasks "clean", "jar"
     dependencies {
         compile 'com.google.gwt:gwt-user:2.3.0', 'com.google.gwt:gwt-dev:2.3.0', 'com.google.gwt.inject:gin:1.5.0'
+        testCompile 'org.spockframework:spock-core:0.5-groovy-1.8'
     }
 
     configurations {

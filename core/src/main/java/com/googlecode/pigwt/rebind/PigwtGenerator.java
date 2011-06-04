@@ -263,12 +263,13 @@ public class PigwtGenerator extends Generator {
         if (printWriter == null) return;
         ClassSourceFileComposerFactory composer;
         composer = new ClassSourceFileComposerFactory(packageName, className);
+        composer.addImport(Map.class.getCanonicalName());
         composer.setSuperclass(PigwtPlace.class.getCanonicalName());
 
         SourceWriter sourceWriter = composer.createSourceWriter(context.getGeneratorContext(), printWriter);
 
         writeMethod(sourceWriter,
-                format("public {0}(final String ... params)", className),
+                format("public {0}(final Map<String, String> params)", className),
                 "super(params);");
         writeMethod(sourceWriter,
                 "public String getPrefix()",
@@ -431,26 +432,27 @@ public class PigwtGenerator extends Generator {
         StringBuilder paramSetters = new StringBuilder();
         String prefixSpaces = "";
         for (JMethod m : activityClass.getMethods()) {
-            // todo: maybe more validation on the method here
-            if (!m.isAnnotationPresent(Param.class)) {
+            if (!m.getName().startsWith("set")) {
                 continue;
             }
             final JParameter[] parameters = m.getParameters();
             if (parameters.length > 1) {
                 continue;
             }
-
-            // set it to null first in case the activity instance was re-used
-            paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(null);");
-
-            paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(");
-
-            if ("java.lang.Integer".equals(parameters[0].getType().getSimpleSourceName())) {
-                paramSetters.append("getIntParam(\"");
-            } else if ("java.lang.Long".equals(parameters[0].getType().getSimpleSourceName())) {
-                paramSetters.append("getLongParam(\"");
-            } else if ("java.lang.String".equals(parameters[0].getType().getSimpleSourceName())) {
-                paramSetters.append("getStringParam(\"");
+            JParameter parameter = parameters[0];
+            final String paramClassName = parameter.getType().getQualifiedSourceName();
+            boolean isInteger = paramClassName.equals(Integer.class.getCanonicalName());
+            boolean isLong = paramClassName.equals(Long.class.getCanonicalName());
+            boolean isString = paramClassName.equals(String.class.getCanonicalName());
+            
+            if (isInteger) {
+                paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(").append("getIntParam(\"");
+            } else if (isLong) {
+                paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(").append("getLongParam(\"");
+            } else if (isString) {
+                paramSetters.append(prefixSpaces).append("activity.").append(m.getName()).append("(").append("getStringParam(\"");
+            } else {
+                continue;
             }
 
             String setterName = m.getName();
@@ -459,7 +461,7 @@ public class PigwtGenerator extends Generator {
             setterName = firstChar + setterName.substring(1, setterName.length());
             paramSetters.append(setterName);
 
-            paramSetters.append("\");\n");
+            paramSetters.append("\"));\n");
 
             prefixSpaces = "          ";
         }

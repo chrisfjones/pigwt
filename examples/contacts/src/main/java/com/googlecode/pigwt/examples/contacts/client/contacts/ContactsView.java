@@ -16,6 +16,7 @@ import com.googlecode.pigwt.client.Pigwt;
 import com.googlecode.pigwt.examples.contacts.client.Contact;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 public class ContactsView extends Composite {
@@ -85,12 +86,13 @@ public class ContactsView extends Composite {
         cellTable.addHandler(new ClickHandler() {
             @Override
             public void onClick(final ClickEvent event) {
-                Pigwt.get().goTo("contact.demographic", "chris", "jones" + i++);
+                final HashMap<String, String> params = new HashMap<String, String>();
+                params.put("first", "Chris");
+                params.put("last", "Jones");
+                Pigwt.get().goTo("contact.demographic", params);
             }
         }, ClickEvent.getType());
 
         cellListContainer.setWidget(cellTable);
     }
-
-    private static int i = 0;
 }

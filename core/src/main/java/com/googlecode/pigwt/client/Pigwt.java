@@ -9,6 +9,8 @@ import com.google.gwt.place.shared.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.RootPanel;
 
+import java.util.Map;
+
 /**
  * Your window into the pigwt universe.
  * @see Pigwt get()
@@ -33,8 +35,16 @@ public abstract class Pigwt implements ActivityMapper {
      * @param pkg The package/place you want to go to
      * @param params Any number of String parameters you want to pass along
      */
-    public final void goTo(String pkg, String ... params) {
+    public final void goTo(String pkg, Map<String, String> params) {
         placeController.goTo(historyMapper.getPlace(TokenizerUtil.tokenize(pkg, params)));
+    }
+
+    /**
+     * Go to the specified place. The history will reflect the new place.
+     * @param pkg The package/place you want to go to
+     */
+    public final void goTo(String pkg) {
+        placeController.goTo(historyMapper.getPlace(TokenizerUtil.tokenize(pkg, null)));
     }
 
     protected void init() {
@@ -61,7 +71,7 @@ public abstract class Pigwt implements ActivityMapper {
         activityManager.setDisplay(rootShell);
 
         RootPanel.get().add(rootShell);
-        historyHandler.register(placeController, eventBus, new DefaultPlace());
+        historyHandler.register(placeController, eventBus, new DefaultPlace(null));
         historyHandler.handleCurrentHistory();
     }
 
@@ -72,7 +82,6 @@ public abstract class Pigwt implements ActivityMapper {
     private Shell getNestedShell(final String placePrefix) {
         final String[] placeChunks = placePrefix.split("\\.");
         Shell outerShell = getRootShell();
-        outerShell.setWidget(null);
         String shellPlacePrefix = "";
         for (String placeChunk : placeChunks) {
             shellPlacePrefix += placeChunk;

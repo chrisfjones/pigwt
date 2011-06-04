@@ -29,7 +29,6 @@ public class AttributesView extends CellTable<Attribute> implements AttributesAc
                 return attribute.getName();
             }
         };
-        nameColumn.setSortable(true);
         addColumn(nameColumn, "Attribute Name");
 
         dataProvider = new ListDataProvider<Attribute>();
@@ -37,8 +36,8 @@ public class AttributesView extends CellTable<Attribute> implements AttributesAc
     }
 
     @Override
-    public void displayAttributes(final List<Attribute> result) {
+    public void displayAttributes(final List<Attribute> result, Integer maxRows) {
         dataProvider.getList().clear();
-        dataProvider.getList().addAll(result);
+        dataProvider.getList().addAll(result.subList(0, maxRows));
     }
 }

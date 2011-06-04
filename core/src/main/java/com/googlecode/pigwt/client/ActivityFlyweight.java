@@ -11,16 +11,26 @@ public abstract class ActivityFlyweight extends AbstractActivity {
         this.placeWithParams = placeWithParams;
     }
 
+    // todo: gracefully handle non-numbers
     protected Integer getIntParam(String name) {
-        return null;
+        final String param = placeWithParams.getParam(name);
+        if (param == null) {
+            return null;
+        }
+        return new Integer(param);
     }
 
+    // todo: gracefully handle non-numbers
     protected Long getLongParam(String name) {
-        return null;
+        final String param = placeWithParams.getParam(name);
+        if (param == null) {
+            return null;
+        }
+        return new Long(param);
     }
 
     protected String getStringParam(String name) {
-        return null;
+        return placeWithParams.getParam(name);
     }
 
     protected void setProxiedActivity(Activity proxiedActivity) {

@@ -1,1 +1,1 @@
-include 'core', 'examples/bigapp', 'examples/contacts'
+include 'core', 'examples/bigapp', 'examples/contacts', 'examples/sampleproject'

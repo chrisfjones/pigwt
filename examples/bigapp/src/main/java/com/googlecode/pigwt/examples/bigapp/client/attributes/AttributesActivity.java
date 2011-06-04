@@ -14,9 +14,10 @@ import java.util.List;
 public class AttributesActivity extends AbstractActivity implements AsyncCallback<List<Attribute>> {
     private Service service;
     private final View view;
+    private Integer maxRows;
 
     public static interface View extends IsWidget {
-        void displayAttributes(List<Attribute> result);
+        void displayAttributes(List<Attribute> result, Integer maxRows);
     }
 
     @Inject
@@ -33,12 +34,16 @@ public class AttributesActivity extends AbstractActivity implements AsyncCallbac
         service.getAttributes(this);
     }
 
+    public void setMaxRows(final Integer maxRows) {
+        this.maxRows = maxRows;
+    }
+
     @Override
     public void onFailure(final Throwable caught) {
     }
 
     @Override
     public void onSuccess(final List<Attribute> result) {
-        view.displayAttributes(result);
+        view.displayAttributes(result, maxRows);
     }
 }
