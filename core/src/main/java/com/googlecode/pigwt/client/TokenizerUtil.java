@@ -12,6 +12,9 @@ public class TokenizerUtil {
     private static URLProxyGwtImpl urlProxyGwt;
 
     public static Map<String, String> parseParams(String token) {
+        if (urlProxyGwt == null) {
+            urlProxyGwt = new URLProxyGwtImpl();
+        }
         return parseParams(token, urlProxyGwt);
     }
     public static Map<String, String> parseParams(String token, URLProxy urlProxy) {

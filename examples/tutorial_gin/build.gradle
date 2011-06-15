@@ -1,0 +1,3 @@
+dependencies {
+    compile 'com.google.gwt.inject:gin:1.5.0', 'com.google.inject:guice-parent:3.0'
+}

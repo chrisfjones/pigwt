@@ -1,0 +1,2 @@
+shells with out-of-the-box styling
+simple widgets to support navigation

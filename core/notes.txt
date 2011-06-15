@@ -1,14 +1,16 @@
 ==== soon =====
--- implement while building out 'bigapp'
-    -- DecoratableEventBus
-       -- EventBusDecorator
-          -- boolean beforeFireEvent
-          -- void afterFireEvent
-       -- Pigwt.decorateEventBus(EventBusDecorator)
+-- ActivityFlyweight needs to delegate mayStop(), onCancel(), and onStop() to the proxiedActivity
 
-    -- Modals?
-    -- login/logout/protected places (Guards)
--- gin support (single injector)
+-- implement while building out 'bigapp'
+-- DecoratableEventBus
+   -- EventBusDecorator
+      -- boolean beforeFireEvent
+      -- void afterFireEvent
+   -- Pigwt.decorateEventBus(EventBusDecorator)
+
+-- Modals?
+-- login/logout/protected places (Guards)
+
 -- logging support
 
 -- PigwtGeneratorStrategy

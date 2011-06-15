@@ -47,7 +47,7 @@ public abstract class Pigwt implements ActivityMapper {
         placeController.goTo(historyMapper.getPlace(TokenizerUtil.tokenize(pkg, null)));
     }
 
-    protected void init() {
+    public void init() {
         eventBus = new SimpleEventBus();
         placeController = new PlaceController(eventBus);
         historyMapper = getPlaceHistoryMapper();
@@ -97,7 +97,11 @@ public abstract class Pigwt implements ActivityMapper {
         return outerShell;
     }
 
-    protected abstract PlaceHistoryMapper getPlaceHistoryMapper();
-    protected abstract Shell getShell(final String placePrefix);
-    protected abstract Shell getRootShell();
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
+    public abstract PlaceHistoryMapper getPlaceHistoryMapper();
+    public abstract Shell getShell(final String placePrefix);
+    public abstract Shell getRootShell();
 }

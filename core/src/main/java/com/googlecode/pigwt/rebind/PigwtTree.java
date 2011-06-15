@@ -1,20 +1,20 @@
 package com.googlecode.pigwt.rebind;
 
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JPackage;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.typeinfo.*;
 import com.googlecode.pigwt.client.PigwtInjectable;
 
 import java.util.*;
 
 class PigwtTree {
     Node root;
-    final List<JClassType> injectables = new ArrayList<JClassType>();
+    final Set<JClassType> injectables = new HashSet<JClassType>();
+    final Map<JClassType, JClassType> abstractToConcreteInjectables = new HashMap<JClassType, JClassType>();
     JClassType ginjector = null;
 
     static class Node {
         String name;
         JClassType activityType;
+        JConstructor activityConstructor;
         JClassType shellClass;
         List<Node> children;
         Node parent;
@@ -36,6 +36,32 @@ class PigwtTree {
         // todo: for now, just use the first injector we run across on the root classpath
         ginjector = context.findGinjectorInPackage(rootPackageName);
 
+        List<JPackage> packages = findModuleSubpackages(context, rootPackageName);
+        
+        root = createPigwtTreeNode(rootPackageName, packages, context, null);
+
+        resolveAbstractInjectables();
+    }
+
+    private void resolveAbstractInjectables() {
+        for (JClassType type : injectables) {
+            if (!type.isAbstract() && (type.isInterface() == null)) {
+                continue;
+            }
+            abstractToConcreteInjectables.put(type, findConcreteTypeForAbstractType(type));
+        }
+    }
+
+    private JClassType findConcreteTypeForAbstractType(final JClassType type) {
+        final JClassType[] subtypes = type.getSubtypes();
+        if (subtypes.length != 1) {
+            // just return the abstract type so it can go through the GWT.create process in case the user has set up a deferred binding rule
+            return type;
+        }
+        return subtypes[0];
+    }
+
+    private List<JPackage> findModuleSubpackages(final PigwtGeneratorContext context, final String rootPackageName) {
         List<JPackage> packages = new ArrayList<JPackage>();
         for (JPackage p : context.getAllPackages()) {
             String pName = p.getName();
@@ -47,7 +73,7 @@ class PigwtTree {
                 return jPackage.getName().compareTo(jPackage1.getName());
             }
         });
-        root = createPigwtTreeNode(rootPackageName, packages, context, null);
+        return packages;
     }
 
     private PigwtTree.Node createPigwtTreeNode(
@@ -58,16 +84,16 @@ class PigwtTree {
         if (packages.isEmpty()) {
             return null;
         }
-        JPackage p = packages.get(0);
-        final String thisPackageName = p.getName();
+        JPackage pkg = packages.get(0);
+        final String thisPackageName = pkg.getName();
         final String rootPattern = "^" + rootPackageName.replace(".", "\\.") + "\\..*";
         final String thisPackageMatch = thisPackageName + ".";
         if (!thisPackageMatch.matches(rootPattern)) {
             return null;
         }
-        packages.remove(p);
+        packages.remove(pkg);
 
-        final JClassType activityClass = context.findActivityInPackage(p);
+        final JClassType activityClass = context.findActivityInPackage(pkg);
         if (activityClass == null) {
             return null;
         }
@@ -75,13 +101,15 @@ class PigwtTree {
         final PigwtTree.Node node = new PigwtTree.Node();
         node.activityType = activityClass;
         node.name = thisPackageName.substring(rootPackageName.length()).replace(".", "");
-        node.shellClass = context.findShellInPackage(p);
+        node.shellClass = context.findShellInPackage(pkg);
         node.children = new ArrayList<PigwtTree.Node>();
         node.parent = parent;
+        node.activityConstructor = findActivityConstructor(activityClass);
 
-        for (JClassType t : p.getTypes()) {
-            if (t.getAnnotation(PigwtInjectable.class) != null) {
-                injectables.add(t);
+        // add injectables
+        for (JType parameterType : node.activityConstructor.getParameterTypes()) {
+            if (parameterType instanceof JClassType) {
+                injectables.add((JClassType) parameterType);
             }
         }
 
@@ -92,6 +120,26 @@ class PigwtTree {
         }
 
         return node;
+    }
+
+    private JConstructor findActivityConstructor(JClassType activityClass) {
+        JConstructor constructor = null;
+        final JConstructor[] constructors = activityClass.getConstructors();
+
+        int mostParameters = -1;
+        // find the constructor with the most injectables
+        for (JConstructor c : constructors) {
+            int parameters = c.getParameters().length;
+            if (parameters > mostParameters) {
+                constructor = c;
+                mostParameters = parameters;
+            }
+        }
+        if (constructor == null) {
+            // todo: error out properly
+            throw new RuntimeException("Found no suitable constructors for " + activityClass.getQualifiedSourceName() + ".");
+        }
+        return constructor;
     }
 
     public synchronized List<String> walkNames() {

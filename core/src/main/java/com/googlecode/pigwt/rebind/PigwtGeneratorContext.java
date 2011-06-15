@@ -48,8 +48,16 @@ class PigwtGeneratorContext {
         java.lang.reflect.Field privateSourcePrefixSetField = ModuleDef.class.getDeclaredField("sourcePrefixSet");
         privateSourcePrefixSetField.setAccessible(true);
         PathPrefixSet prefixes = (PathPrefixSet) privateSourcePrefixSetField.get(module);
-        final PathPrefix pathPrefix = (PathPrefix) prefixes.values().toArray()[prefixes.getSize() - 1];
-        String pathString = pathPrefix.getPrefix();
+        final Object[] prefixArray = prefixes.values().toArray();
+
+        String pathString = null;
+        for (int i = prefixArray.length - 1; i > 0; i--) {
+            pathString = ((PathPrefix) prefixArray[i]).getPrefix();
+            if (!pathString.startsWith("com/google/gwt/junit/")) {
+                break;
+            }
+        }
+
         if (pathString.endsWith("/")) {
             pathString = pathString.substring(0, pathString.length() - 1);
         }
