@@ -5,5 +5,5 @@
 <module rename-to='app'>
     <inherits name="com.googlecode.pigwt"/>
     <inherits name='com.google.gwt.inject.Inject'/>
-    <source path='gintest'/>
+    <source path='test'/>
 </module>

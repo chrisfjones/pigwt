@@ -30,10 +30,3 @@
 -- web vs mobile version?
 -- gin support (multiple injectors)
 
-
-
-
-
-
-==== documentation notes ====
--- pigwt invites you to [skip ahead] to the part where you make great apps.

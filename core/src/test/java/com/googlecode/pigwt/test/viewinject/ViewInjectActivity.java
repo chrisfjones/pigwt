@@ -5,12 +5,15 @@ import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.client.ui.IsWidget;
 
+import javax.inject.Inject;
+
 public class ViewInjectActivity extends AbstractActivity {
     public static interface View extends IsWidget {
     }
     
     private View view;
 
+    @Inject
     public ViewInjectActivity(final View view) {
         this.view = view;
     }
