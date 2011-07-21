@@ -28,9 +28,8 @@ public class ContactsView extends Composite {
     CellTable<Contact> cellTable;
 
     public void displayContacts(List<Contact> result) {
-        for (Contact contact : result) {
-            list.add(contact);
-        }
+        list.clear();
+        list.addAll(result);
     }
     
     public ContactsView() {

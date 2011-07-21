@@ -1,6 +1,4 @@
 ==== soon =====
--- ActivityFlyweight needs to delegate mayStop(), onCancel(), and onStop() to the proxiedActivity
-
 -- implement while building out 'bigapp'
 -- DecoratableEventBus
    -- EventBusDecorator
@@ -27,6 +25,5 @@
 
 ==== future =======
 -- plug in to UiBinder somehow to make place linking easier (or implement custom link widget)
--- web vs mobile version?
+-- web vs mobile version? (elasticity)
 -- gin support (multiple injectors)
-

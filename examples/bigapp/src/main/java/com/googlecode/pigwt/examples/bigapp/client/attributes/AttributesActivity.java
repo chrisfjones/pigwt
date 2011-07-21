@@ -14,10 +14,10 @@ import java.util.List;
 public class AttributesActivity extends AbstractActivity implements AsyncCallback<List<Attribute>> {
     private Service service;
     private final View view;
-    private Integer maxRows;
+    private Integer maxRows = 10;
 
     public static interface View extends IsWidget {
-        void displayAttributes(List<Attribute> result, Integer maxRows);
+        void displayAttributes(List<Attribute> result, int maxRows);
     }
 
     @Inject
@@ -35,7 +35,7 @@ public class AttributesActivity extends AbstractActivity implements AsyncCallbac
     }
 
     public void setMaxRows(final Integer maxRows) {
-        this.maxRows = maxRows;
+        this.maxRows = (maxRows == null) ? 10 : maxRows;
     }
 
     @Override

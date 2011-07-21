@@ -36,8 +36,8 @@ public class AttributesView extends CellTable<Attribute> implements AttributesAc
     }
 
     @Override
-    public void displayAttributes(final List<Attribute> result, Integer maxRows) {
+    public void displayAttributes(final List<Attribute> result, int maxRows) {
         dataProvider.getList().clear();
-        dataProvider.getList().addAll(result.subList(0, maxRows));
+        dataProvider.getList().addAll(result.subList(0, Math.min(maxRows, result.size())));
     }
 }

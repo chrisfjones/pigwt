@@ -1,7 +1,6 @@
 package com.googlecode.pigwt.rebind;
 
 import com.google.gwt.core.ext.typeinfo.*;
-import com.googlecode.pigwt.client.PigwtInjectable;
 
 import java.util.*;
 

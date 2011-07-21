@@ -40,4 +40,19 @@ public abstract class ActivityFlyweight extends AbstractActivity {
     public Activity getProxiedActivity() {
         return proxiedActivity;
     }
+
+    @Override
+    public String mayStop() {
+        return proxiedActivity.mayStop();
+    }
+
+    @Override
+    public void onCancel() {
+        proxiedActivity.onCancel();
+    }
+
+    @Override
+    public void onStop() {
+        proxiedActivity.onStop();
+    }
 }
