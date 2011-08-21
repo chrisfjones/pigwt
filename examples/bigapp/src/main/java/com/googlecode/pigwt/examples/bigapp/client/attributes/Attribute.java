@@ -1,4 +1,4 @@
-package com.googlecode.pigwt.examples.bigapp.client.model;
+package com.googlecode.pigwt.examples.bigapp.client.attributes;
 
 public class Attribute {
     private String name;

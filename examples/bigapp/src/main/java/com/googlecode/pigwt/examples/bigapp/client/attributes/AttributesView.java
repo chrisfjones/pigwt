@@ -3,10 +3,7 @@ package com.googlecode.pigwt.examples.bigapp.client.attributes;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.TextColumn;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.view.client.ListDataProvider;
-import com.googlecode.pigwt.examples.bigapp.client.model.Attribute;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

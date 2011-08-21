@@ -6,7 +6,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.googlecode.pigwt.examples.bigapp.client.Service;
-import com.googlecode.pigwt.examples.bigapp.client.model.Attribute;
 
 import javax.inject.Inject;
 import java.util.List;

@@ -17,6 +17,12 @@
    -- simpleNoGin
 
 
+
+Shell
+Guard
+Modal
+
+
 ==== bugs/cleanup ======
 -- Whats the 'right' way to find module package? (not the hacks that rely on private fields)
 -- paramaters on root activity

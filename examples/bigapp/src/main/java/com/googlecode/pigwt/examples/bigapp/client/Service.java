@@ -1,7 +1,7 @@
 package com.googlecode.pigwt.examples.bigapp.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.googlecode.pigwt.examples.bigapp.client.model.Attribute;
+import com.googlecode.pigwt.examples.bigapp.client.attributes.Attribute;
 
 import java.util.Arrays;
 import java.util.List;
